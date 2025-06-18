@@ -17,6 +17,11 @@ impl Entry {
             due_date: due_date,
         }
     }
+
+    pub fn entry_status(&self) -> String {
+       let state = if self.status {"[*]"} else {"[ ]"};
+       format!("Todo Item: {} -> {}\n", &self.name, state)
+    }
 }
 
 
