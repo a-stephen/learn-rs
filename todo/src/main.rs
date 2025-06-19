@@ -164,7 +164,4 @@ impl Todo {
 fn main() {
     let todos = Todo::new().unwrap();
     println!("Todo items: {:?} | Todo path: {:?}", todos.items, todos.todo_path);
-    // let entry = "[ ]; do laundry; 21/09/190; 21/09/1009".to_string();
-    // let entry_one =  Entry::read_entry_line(entry);
-    // println!("{:?}", entry_one.format_entry_line(7));
 }
