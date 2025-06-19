@@ -1,7 +1,8 @@
 use std::{fs::OpenOptions, io::BufReader};
-use std::io::{BufWriter, Read, Write};
+use std::io::{BufWriter, Read, Write, Error};
 
 use colored::*;
+
 
 struct Entry {
     name: String,
@@ -9,6 +10,7 @@ struct Entry {
     commenced_date: String,
     due_date: String
 }
+
 
 impl Entry {
     pub fn new(
@@ -83,30 +85,53 @@ impl Todo {
             }
         };
 
-        let todofile = OpenOptions::new()
-            .write(true)
-            .read(true)
-            .create(true)
-            .open(&todo_path)
-            .expect(
-                &format!("Could not open the file located at {}", &todo_path)
-            );
-
-        let mut todobuf = BufReader::new(&todofile);
-        let mut todos = String::new();
-
-        todobuf.read_to_string(&mut todos).map_err(|err| {
-            eprintln!("Could not read the content of Buffer due to {err}")
-        }).unwrap();
-        let todo_items = todos.lines().map(str::to_string).collect::<Vec<String>>();
+        let (todos, todo_path) = Todo::read_todos(todo_path).map_err(|err| {
+                eprintln!("ERROR: {err}");
+            }
+        ).unwrap();
 
         Ok(
             Self {
-                items: todo_items,
+                items: todos,
                 todo_path: todo_path
             }
         )
     }
+
+    pub fn read_todos(path: String) -> Result<(Vec<String>, String), Error> {
+        let todo_file = OpenOptions::new()
+            .write(true)
+            .read(true)
+            .create(true)
+            .open(&path)
+            .expect(
+                &format!("Could not open the file store at location: {}", &path)
+            );
+
+        let mut file_buf = BufReader::new(&todo_file);
+        let mut file_content = String::new();
+
+        file_buf.read_to_string(&mut file_content).map_err(|err| {
+            eprintln!("ERROR: {err}")
+        }).unwrap();
+
+        match file_content.lines().collect::<Vec<_>>().len() {
+            x if x > 0 => {
+                let todos = file_content
+                    .lines()
+                    .map(str::to_string)
+                    .collect::<Vec<String>>();
+                Ok(
+                    (todos, path)
+                )
+            },
+
+            0 => Ok((vec![], path)),
+            _ => Ok((vec![], path))
+        }
+
+    }
+
     pub fn list(&self) {
         let stdout = std::io::stdout();
         let mut writer = BufWriter::new(stdout);
@@ -132,13 +157,14 @@ impl Todo {
                     .expect("Data can not be written to stdout")
             },
             _ => todo!()
-            // Err(_) => writer.write_all("No data to write".as_bytes());
         }
     }
 }
 
 fn main() {
-    let entry = "[ ]; do laundry; 21/09/190; 21/09/1009".to_string();
-    let entry_one =  Entry::read_entry_line(entry);
-    println!("{:?}", entry_one.format_entry_line(7));
+    let todos = Todo::new().unwrap();
+    println!("Todo items: {:?} | Todo path: {:?}", todos.items, todos.todo_path);
+    // let entry = "[ ]; do laundry; 21/09/190; 21/09/1009".to_string();
+    // let entry_one =  Entry::read_entry_line(entry);
+    // println!("{:?}", entry_one.format_entry_line(7));
 }
