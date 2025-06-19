@@ -19,3 +19,11 @@
                     todo_path: String // Local copy of the todo file
                 }
             ```
+
+    - Entry Functions
+        - An entry can be read as string
+        - An entry can be modified
+
+    - Todo Functions
+        - Todo's can be listed
+        - Todo's can be edited, sorted, modified (add & remove)
