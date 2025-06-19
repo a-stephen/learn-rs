@@ -138,12 +138,6 @@ impl Todo {
 }
 
 fn main() {
-    let entry_1 = Entry::new(
-        "Laundry".to_string(),
-        false,
-        "21/06/2024".to_string(),
-        "25/06/2025".to_string()
-    );
     let entry = "[ ]; do laundry; 21/09/190; 21/09/1009".to_string();
     let entry_one =  Entry::read_entry_line(entry);
     println!("{:?}", entry_one.format_entry_line(7));
