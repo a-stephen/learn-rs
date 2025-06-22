@@ -6,7 +6,7 @@ use colored::*;
 
 struct Entry {
     name: String,
-    status: bool,
+    done: bool,
     commenced_date: String,
     due_date: String
 }
@@ -14,24 +14,24 @@ struct Entry {
 
 impl Entry {
     pub fn new(
-        entry_name: String, status: bool,
+        entry_name: String, done: bool,
         commenced_date: String, due_date: String
     ) -> Self {
         Self {
             name: entry_name,
-            status: status,
+            done: done,
             commenced_date: commenced_date,
             due_date: due_date,
         }
     }
 
     pub fn mark_entry_line(&self) -> String {
-       let state = if self.status {"[*]"} else {"[ ]"};
+       let state = if self.done {"[*]"} else {"[ ]"};
        format!("{}, {}\n", &self.name, state)
     }
 
     pub fn format_entry_line(&self, number: usize) -> String {
-        let entry_name_formatted = if self.status {
+        let entry_name_formatted = if self.done {
             self.name.strikethrough().to_string()
         } else {
             self.name.clone()
@@ -42,27 +42,72 @@ impl Entry {
              entry_name_formatted,
              self.commenced_date,
              self.due_date,
-             self.status,
+             self.done,
         )
     }
 
-    pub fn read_entry_line(entry_line: String) -> Self {
+    /// Function to convert string line to Entry
+    ///     - Considers the length of the parsed array
+    ///     - Name is an important argument, second position in entry
+    ///     - Commenced date and due date can be omitted
+    pub fn read_entry_line(entry_line: String) -> Result<Self, String> {
         let line_array = entry_line.split(";").map(str::to_string).collect::<Vec<String>>();
-        println!("{:?}", line_array);
+        let default_entry = Self {
+            name: String::from(""),
+            done: false,
+            commenced_date: String::from(""),
+            due_date: String::from("")
+        };
         match line_array.len() {
             x if x == 4 => {
-                let status = if line_array[0] == "[*]" { true } else { false };
-                let name = &line_array[1];
-                let commenced_date = &line_array[2];
-                let due_date = &line_array[3];
-                return Self {
-                    name: name.to_string(),
-                    status: status,
-                    commenced_date: commenced_date.to_string(),
-                    due_date: due_date.to_string()
-                }
+                return Ok(
+                    Self {
+                        name: String::from(&line_array[1]),
+                        done: if &line_array[0] == "[*]" {true} else {false},
+                        commenced_date: String::from(&line_array[2]),
+                        due_date: String::from(&line_array[3])
+                    }
+                )
             }
-
+            2 => {
+                return Ok(
+                    Self {
+                        name: String::from(&line_array[1]),
+                        done: if &line_array[0] == "[*]" {true} else {false},
+                        commenced_date: String::from(""),
+                        due_date: String::from("")
+                    }
+                )
+            },
+            3 => {
+                return Ok(
+                    Self {
+                        name: String::from(&line_array[1]),
+                        done: if &line_array[0] == "[*]" {true} else {false},
+                        commenced_date: String::from(&line_array[2]),
+                        due_date: String::from("")
+                    }
+                )
+            }
+            1 => {
+                if line_array[0].starts_with("[") {
+                    return Ok(default_entry)
+                } else {
+                    Ok(
+                        Self {
+                            name: String::from(&line_array[0]),
+                            done: false,
+                            commenced_date: String::from(""),
+                            due_date: String::from("")
+                        }
+                    )
+                }
+            },
+            0 => {
+                eprintln!("Please consider adding at least the name of todo");
+                return Ok(default_entry)
+            },
+            _ => Err("an ERROR occured".to_string())
         }
     }
 }
@@ -146,7 +191,7 @@ impl Todo {
                 for (number, task) in self.items.iter().enumerate() {
                     let line_item = Entry::read_entry_line(task.to_string());
                     let number = number + 1;
-                    let entry = line_item.format_entry_line(number);
+                    let entry = line_item.expect("Entry not parsed properly").format_entry_line(number);
                     todos.push_str(&entry);
                 };
                 writer
@@ -172,7 +217,10 @@ impl Todo {
     pub fn add(&self, entries: &[String]) -> String {
         println!("{} entries about to be added to todo", &entries.len());
         for entry in entries.iter() {
-            println!("{:?}", entry);
+            let new_entry = Entry::read_entry_line(String::from(entry)).map_err(|err| {
+                eprintln!("An error occured: {err}")
+            }).unwrap();
+            println!("{:?}", new_entry.name.trim())
         };
         format!("Successfully added {} tasks", &entries.len())
     }
@@ -181,6 +229,6 @@ impl Todo {
 fn main() {
     let todos = Todo::new().unwrap();
     // println!("Todo items: {:?} | Todo path: {:?}", todos.items, todos.todo_path);
-    let entry_add =  todos.add(&[String::from("Me"), String::from("Stephen"), String::from("angelo")]);
+    let entry_add =  todos.add(&[String::from("[]; Me"), String::from("; Stephen"), String::from("; angelo")]);
     println!("{:?}", entry_add)
 }
