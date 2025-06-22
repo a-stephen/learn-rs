@@ -49,15 +49,20 @@ impl Entry {
     pub fn read_entry_line(entry_line: String) -> Self {
         let line_array = entry_line.split(";").map(str::to_string).collect::<Vec<String>>();
         println!("{:?}", line_array);
-        let status = if line_array[0] == "[*]" { true } else { false };
-        let name = &line_array[1];
-        let commenced_date = &line_array[2];
-        let due_date = &line_array[3];
-        return Self {
-           name: name.to_string(),
-           status: status,
-           commenced_date: commenced_date.to_string(),
-           due_date: due_date.to_string()
+        match line_array.len() {
+            x if x == 4 => {
+                let status = if line_array[0] == "[*]" { true } else { false };
+                let name = &line_array[1];
+                let commenced_date = &line_array[2];
+                let due_date = &line_array[3];
+                return Self {
+                    name: name.to_string(),
+                    status: status,
+                    commenced_date: commenced_date.to_string(),
+                    due_date: due_date.to_string()
+                }
+            }
+
         }
     }
 }
@@ -150,7 +155,7 @@ impl Todo {
                 ).expect("Data can not be writtten to stdout!");
             },
             0 => {
-                let empty_todo_msg = "No task for now.\n Please consider adding";
+                let empty_todo_msg = "No task for now.\nPlease consider adding\n";
                 todos.push_str(empty_todo_msg);
                 writer
                     .write_all(todos.as_bytes())
@@ -159,9 +164,23 @@ impl Todo {
             _ => todo!()
         }
     }
+
+    /// Function to add new task to todo file
+    ///     - All new entry default to fasle as done
+    ///     - Commenced date defaults to the creation date
+    ///     - Completed date/due date defaults to null
+    pub fn add(&self, entries: &[String]) -> String {
+        println!("{} entries about to be added to todo", &entries.len());
+        for entry in entries.iter() {
+            println!("{:?}", entry);
+        };
+        format!("Successfully added {} tasks", &entries.len())
+    }
 }
 
 fn main() {
     let todos = Todo::new().unwrap();
-    println!("Todo items: {:?} | Todo path: {:?}", todos.items, todos.todo_path);
+    // println!("Todo items: {:?} | Todo path: {:?}", todos.items, todos.todo_path);
+    let entry_add =  todos.add(&[String::from("Me"), String::from("Stephen"), String::from("angelo")]);
+    println!("{:?}", entry_add)
 }
